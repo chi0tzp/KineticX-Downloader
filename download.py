@@ -4,7 +4,6 @@ import os.path as osp
 import argparse
 import urllib.request
 import pandas as pd
-import multiprocessing
 from multiprocessing import Pool
 from tqdm import tqdm
 import tarfile
@@ -12,6 +11,7 @@ import pytube
 
 
 global video_output_dir
+# TODO: change error_file name according to dataset version
 error_file = 'errors.log'
 errors = 0
 
@@ -19,6 +19,7 @@ errors = 0
 def download_video(youtube_id):
     global errors
     # TODO: do not download it video already exists
+    #   if (not osp.isfile(final_video_file)) or (os.stat(final_video_file).st_size == 0):
     try:
         youtube = pytube.YouTube('https://www.youtube.com/watch?v=' + youtube_id)
         video = youtube.streams.first()
