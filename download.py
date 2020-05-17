@@ -10,20 +10,24 @@ import tarfile
 import pytube
 
 
-global video_output_dir
-# TODO: change error_file name according to dataset version
-error_file = 'errors.log'
+global video_output_dir, error_file
 errors = 0
 
 
 def download_video(youtube_id):
-    global errors
-    # TODO: do not download it video already exists
-    #   if (not osp.isfile(final_video_file)) or (os.stat(final_video_file).st_size == 0):
+    global error_file, errors
     try:
         youtube = pytube.YouTube('https://www.youtube.com/watch?v=' + youtube_id)
         video = youtube.streams.first()
-        video.download(output_path=video_output_dir, filename=youtube_id)
+        # TODO: do not download it video already exists
+        video_filename = osp.join(video_output_dir, youtube_id + '.' + video.subtype)
+        if (not osp.isfile(video_filename)) or (os.stat(video_filename).st_size == 0):
+            try:
+                video.download(output_path=video_output_dir, filename=youtube_id)
+            except:
+                with open(error_file, "a") as f:
+                    f.write("{}\n".format(youtube_id))
+                    errors += 1
     except:
         with open(error_file, "a") as f:
             f.write("{}\n".format(youtube_id))
@@ -39,6 +43,8 @@ def main():
     parser.add_argument('-w', '--workers', type=int, default=None, help="Set number of multiprocessing workers")
     args = parser.parse_args()
 
+    print("#.Download Kinetics{} dataset...".format(args.version))
+
     # Define dataset root directory name
     root_dir = 'Kinetics{}'.format(args.version)
 
@@ -47,7 +53,7 @@ def main():
     if not osp.exists(anno_dir):
         os.makedirs(anno_dir, exist_ok=True)
 
-    print("#.Download URLs and annotations tar.gz file for Kinetics-{}...".format(args.version))
+    print("#.Download URLs and annotations tar.gz file for Kinetics{}...".format(args.version))
     anno_root_url = "https://storage.googleapis.com/deepmind-media/Datasets/kinetics"
     anno_tar_file = osp.join(anno_dir, "kinetics{}.tar.gz".format(args.version))
     try:
@@ -56,7 +62,7 @@ def main():
     except:
         raise ConnectionError("Could not download URLs and annotations file: {}".format(anno_tar_file))
 
-    print("#.Extract URLs and annotations tar.gz file for Kinetics-{}...".format(args.version))
+    print("#.Extract URLs and annotations tar.gz file for Kinetics{}...".format(args.version))
     tf = tarfile.open(anno_tar_file)
     tf.extractall(path=anno_dir, members=None)
     anno_dir = osp.join(anno_dir, 'kinetics{}'.format(args.version))
@@ -74,10 +80,15 @@ def main():
     # TODO: add comment
     for subset in subsets:
         print("#.Process subset: {}".format(subset))
-        global video_output_dir
+        global video_output_dir, error_file
+
         video_output_dir = osp.join(video_dir, subset)
         if not osp.exists(video_output_dir):
             os.makedirs(video_output_dir)
+
+        error_file = 'Kinetics{}_{}_errors.log'.format(args.version, subset)
+        if osp.exists(error_file):
+            os.remove(error_file)
 
         print("  \\__Parse URLs csv file...")
         youtube_ids = pd.read_csv(osp.join(anno_dir, '{}.csv'.format(subset))).youtube_id.tolist()

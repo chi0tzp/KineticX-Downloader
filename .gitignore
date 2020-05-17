@@ -2,4 +2,4 @@
 *~
 .idea/
 Kinetics*/
-errors.log
+*.log
