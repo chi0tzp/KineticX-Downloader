@@ -1,4 +1,3 @@
-import sys
 import os
 import os.path as osp
 import argparse
@@ -15,11 +14,16 @@ errors = 0
 
 
 def download_video(youtube_id):
+    """Download video from YouTube using PyTube.
+
+    Args:
+        youtube_id (str): Youtube id (https://www.youtube.com/watch?v=<youtube_id>)
+
+    """
     global error_file, errors
     try:
         youtube = pytube.YouTube('https://www.youtube.com/watch?v=' + youtube_id)
         video = youtube.streams.first()
-        # TODO: do not download it video already exists
         video_filename = osp.join(video_output_dir, youtube_id + '.' + video.subtype)
         if (not osp.isfile(video_filename)) or (os.stat(video_filename).st_size == 0):
             try:
@@ -72,26 +76,31 @@ def main():
     if not osp.exists(video_dir):
         os.makedirs(video_dir)
 
-    # TODO: add comment
+    # Get dataset subset(s) for downloading
     subsets = (args.subset, )
     if args.subset == 'all':
         subsets = ('train', 'test', 'validate')
 
-    # TODO: add comment
+    # Download dataset subset
     for subset in subsets:
         print("#.Process subset: {}".format(subset))
         global video_output_dir, error_file
 
+        # Create dir for dataset subset
         video_output_dir = osp.join(video_dir, subset)
         if not osp.exists(video_output_dir):
             os.makedirs(video_output_dir)
 
+        # Define error log file
         error_file = 'Kinetics{}_{}_errors.log'.format(args.version, subset)
         if osp.exists(error_file):
             os.remove(error_file)
 
+        # Parse URLs csv file and get a list of YouTube IDs to download
         print("  \\__Parse URLs csv file...")
         youtube_ids = pd.read_csv(osp.join(anno_dir, '{}.csv'.format(subset))).youtube_id.tolist()
+
+        # Download YouTube videos for given IDs
         print("  \\__Download videos...")
         pool = Pool(args.workers)
         for _ in tqdm(pool.imap_unordered(download_video, youtube_ids), total=len(youtube_ids)):
