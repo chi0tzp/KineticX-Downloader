@@ -43,4 +43,4 @@ Dataset videos will be saved under the directory `Kinetics<version>/`. It is exp
 
 ## TODO
 
-- [ ] Add script for extracting frames from downloaded video. In the meantime, you may take a look at [here](https://github.com/chi0tzp/PyVideoFramesExtractor).
+- [ ] Add script for extracting frames from downloaded video. In the meantime, you may take a look at this [repo](https://github.com/chi0tzp/PyVideoFramesExtractor).
